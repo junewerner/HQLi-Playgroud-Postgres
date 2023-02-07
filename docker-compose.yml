@@ -4,32 +4,44 @@ services:
   app:
     container_name: "app"
     image: "metz/wildfly"
+    build: .
     environment:
       - WILDFLY_USER=admin
-      - WILDFLY_PASS=adminPassword
-      - DB_NAME=sample
+      - WILDFLY_PASS=admin
+      - DB_NAME=HQLi
       - DB_USER=mysql
       - DB_PASS=mysql
-      - DB_URI=db:3306
+      - DB_URI=db:5432
     depends_on:
       - db
+      #db:
+        #condition: service_healthy        
     ports:
       - "8080:8080" # application
       - "9990:9990" # admin console
 
   db:
     container_name: "db"
-    image: "mysql:latest"
-    environment:
-      - MYSQL_DATABASE=sample
-      - MYSQL_USER=mysql
-      - MYSQL_PASSWORD=mysql
-      - MYSQL_ROOT_PASSWORD=supersecret
-    volumes:
-      - ./workdir/db/init/:/docker-entrypoint-initdb.d/ # init database
-      - ./workdir/db/data/:/var/lib/mysql/              # data storage
+    image: postgres:9.6.1
     ports:
-      - "3306:3306"
+        - "5432:5432"
+    environment:
+        - POSTGRES_USER=admin
+        - POSTGRES_PASSWORD=admin
+        - POSTGRES_DB=hqli
+    volumes:
+      - ./sql:/docker-entrypoint-initdb.d/
+    #healthcheck:
+     # test: PGPASSWORD=admin psql -U admin -d HQLi -c 'select 1'
+      #interval: 10s
+      #timeout: 5s
+      #retries: 5
+      
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8081:8080
 
 networks:
     default:
